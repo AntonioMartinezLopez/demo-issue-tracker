@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": ["Bash(bun run *)", "Bash(git commit *)"],
+    "deny": ["Bash(git push *)"],
+    "ask": ["Bash(rm *)", "Bash(mv *)"],
+    "defaultMode": "acceptEdits"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run typecheck",
+            "statusMessage": "Type checking...",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
