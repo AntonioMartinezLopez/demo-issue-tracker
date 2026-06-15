@@ -7,11 +7,12 @@ description: |
   wrap-up ritual so the user doesn't have to remember the steps.
 ---
 
-The board's REST API is at `http://localhost:3000/api/issues`.
+The board's REST API base URL is in `$ISSUE_TRACKER_URL` (e.g. `http://localhost:3000`).
+If `$ISSUE_TRACKER_TOKEN` is set, include `-H "Authorization: Bearer $ISSUE_TRACKER_TOKEN"` on every request.
 
 When the user is wrapping up an issue:
 
-1. **Resolve the issue.** `curl -s http://localhost:3000/api/issues` and find
+1. **Resolve the issue.** `curl -s $ISSUE_TRACKER_URL/api/issues` and find
    the one they mean — by id if they gave a number, otherwise by closest title
    match. State which issue you matched in one line.
 
@@ -21,8 +22,9 @@ When the user is wrapping up an issue:
 3. **Apply all three updates in one PATCH:**
 
    ```bash
-   curl -s -X PATCH http://localhost:3000/api/issues/<id> \
+   curl -s -X PATCH $ISSUE_TRACKER_URL/api/issues/<id> \
      -H 'content-type: application/json' \
+     -H "Authorization: Bearer $ISSUE_TRACKER_TOKEN" \
      -d '{"status":"done","assignee":null,"description":"<existing description>\n\nResolved: <summary>"}'
    ```
 

@@ -1,0 +1,5 @@
+{
+  "env": {
+    "ISSUE_TRACKER_TOKEN": "your-secret-token-here"
+  }
+}

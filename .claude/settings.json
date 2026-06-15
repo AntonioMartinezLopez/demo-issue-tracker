@@ -1,8 +1,16 @@
 {
   "permissions": {
-    "allow": ["Bash(bun run *)", "Bash(git commit *)"],
-    "deny": ["Bash(git push *)"],
-    "ask": ["Bash(rm *)", "Bash(mv *)"],
+    "allow": [
+      "Bash(bun run *)",
+      "Bash(git commit *)"
+    ],
+    "deny": [
+      "Bash(git push *)"
+    ],
+    "ask": [
+      "Bash(rm *)",
+      "Bash(mv *)"
+    ],
     "defaultMode": "acceptEdits"
   },
   "hooks": {
@@ -13,11 +21,15 @@
           {
             "type": "command",
             "command": "bun run typecheck",
-            "statusMessage": "Type checking...",
-            "timeout": 60
+            "timeout": 60,
+            "statusMessage": "Type checking..."
           }
         ]
       }
     ]
-  }
+  },
+  "env": {
+    "ISSUE_TRACKER_URL": "http://localhost:3001"
+  },
+  "enabledPlugins": {}
 }

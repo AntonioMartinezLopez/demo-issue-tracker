@@ -2,7 +2,9 @@
   "name": "issue-ops",
   "version": "0.1.0",
   "description": "Team workflow for the Issue Tracker: blocks commits on red typecheck and teaches the agent the issue wrap-up ritual.",
-  "author": "Issue Tracker Team",
-  "hooks": "./hooks/hooks.json",
+  "author": {
+    "name": "Issue Tracker Team",
+    "email": "antonio.martinez.lopez@outlook.de"
+  },
   "skills": "./skills"
 }

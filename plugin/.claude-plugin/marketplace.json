@@ -1,0 +1,20 @@
+{
+  "name": "issue-tracker-marketplace",
+  "description": "Plugin marketplace for the Issue Tracker project",
+  "owner": {
+    "name": "Issue Tracker Team",
+    "email": "antonio.martinez.lopez@outlook.de"
+  },
+  "plugins": [
+    {
+      "name": "issue-ops",
+      "description": "Team workflow for the Issue Tracker: blocks commits on red typecheck and teaches the agent the issue wrap-up ritual.",
+      "version": "0.1.0",
+      "source": "./",
+      "author": {
+        "name": "Issue Tracker Team",
+        "email": "antonio.martinez.lopez@outlook.de"
+      }
+    }
+  ]
+}
