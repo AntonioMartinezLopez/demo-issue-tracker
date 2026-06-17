@@ -1,0 +1,22 @@
+{
+  "name": "issue-tracker-mcp",
+  "version": "1.0.0",
+  "description": "MCP server that gives AI agents access to the Issue Tracker API",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/mcp/src/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "express": "^5.2.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.19.21",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

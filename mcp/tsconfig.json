@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    // Target modern Node.js — ES2022 gives us async/await, top-level await, etc.
+    "target": "ES2022",
+
+    // "NodeNext" tells TypeScript to resolve imports the same way Node.js does
+    // when using ES Modules. Required when "type": "module" is in package.json.
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    // Where compiled .js files go. "npm start" will look here.
+    "outDir": "./dist",
+
+    // Where TypeScript looks for your source files.
+    //
+    // We set this to ".." (the project root, one level above "mcp/") so that
+    // TypeScript allows imports like "../../lib/types" which reach up into the
+    // main Next.js project. Without this, TypeScript would refuse to import
+    // anything outside "mcp/src/".
+    //
+    // Side effect: the compiled output path becomes dist/mcp/src/index.js
+    // instead of dist/index.js. The "start" script in package.json accounts
+    // for this.
+    "rootDir": "..",
+
+    // Strict mode: enables all the helpful TypeScript safety checks.
+    // Catches bugs like missing null checks, wrong types, etc.
+    "strict": true,
+
+    // Emit .js files from .ts files (set to false if you only want type-checking).
+    "noEmit": false,
+
+    "types": ["node"]
+  },
+  "include": ["src/**/*"]
+}
