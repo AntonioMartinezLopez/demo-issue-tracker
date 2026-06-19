@@ -1,0 +1,131 @@
+
+# ============================================================
+# Issue Tracker — Full Stack with Keycloak Auth
+# ============================================================
+#
+# Services:
+#   keycloak     — Auth server (in-memory H2, dev mode)
+#   keycloak-setup — OpenTofu init container: configures Keycloak
+#                    with realm, clients, scopes, users
+#   api          — Next.js Issue Tracker API (port 3001)
+#   mcp          — MCP server with OAuth protection (port 3002)
+#
+# Usage:
+#   docker compose up          # start everything
+#   docker compose down        # stop and remove containers
+#   docker compose down -v     # also remove volumes (full reset)
+#
+# After startup:
+#   Next.js API:    http://localhost:3001
+#   MCP server:     http://localhost:3002/mcp
+#   Keycloak admin: http://localhost:8080  (admin / admin)
+
+services:
+
+  # ── Keycloak ─────────────────────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2
+    command: start-dev
+    ports:
+      - "8080:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+
+      # KC_HOSTNAME pins the public-facing URL.
+      # Without this, Keycloak might issue tokens with "iss: http://keycloak:8080/..."
+      # (the internal Docker hostname) for some flows, breaking validation on the
+      # client side where Keycloak is only reachable at localhost:8080.
+      KC_HOSTNAME: "http://localhost:8080"
+
+      # Allow the MCP server (inside Docker) to call Keycloak using the
+      # internal hostname "http://keycloak:8080" for introspection.
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+
+      # Enables /health/ready on the management port (9000).
+      KC_HEALTH_ENABLED: "true"
+
+    healthcheck:
+      # Keycloak 26 requires HTTP/1.1 with a Host header — HTTP/1.0 causes a
+      # NullPointerException on authority(). We hit the management health endpoint
+      # on port 9000 (separate from the main 8080 port) using a raw TCP socket
+      # with a proper HTTP/1.1 request.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost:9000\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
+  # ── Keycloak setup (OpenTofu) ─────────────────────────────────
+  # This is an init container — it runs once, applies the Terraform
+  # config to Keycloak, then exits. The mcp service waits for it.
+  keycloak-setup:
+    image: ghcr.io/opentofu/opentofu:1.9
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    volumes:
+      - ./tofu:/tofu
+    working_dir: /tofu
+    # Override the default "tofu" entrypoint so we can run a shell script.
+    # Without this, Docker would pass our command as arguments to tofu itself.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo 'Keycloak healthy — running OpenTofu...' &&
+        tofu init &&
+        tofu apply -auto-approve \
+          -var='keycloak_url=http://keycloak:8080' \
+          -var='keycloak_admin_user=admin' \
+          -var='keycloak_admin_password=admin' \
+          -var='mcp_server_url=http://127.0.0.1:3002/mcp' \
+          -var='mcp_server_client_secret=mcp-server-secret'
+
+  # ── Next.js API ───────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: "3001"
+      NODE_ENV: development
+
+  # ── MCP Server ────────────────────────────────────────────────
+  mcp:
+    build:
+      context: .               # ← project root (needed for lib/ access)
+      dockerfile: mcp/Dockerfile
+    ports:
+      - "3002:3002"
+    depends_on:
+      keycloak-setup:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "3002"
+
+      # Must match EXACTLY the URL Claude Code used to register the MCP server.
+      # Claude Code validates the "resource" field in the auth metadata response
+      # against the URL it connected to — host, port, and path must all match.
+      MCP_SERVER_URL: "http://127.0.0.1:3002/mcp"
+
+      # Keycloak external URL — embedded in auth metadata for clients.
+      KEYCLOAK_URL: "http://localhost:8080"
+
+      # Keycloak internal URL — used for server-to-server introspection calls.
+      KEYCLOAK_INTERNAL_URL: "http://keycloak:8080"
+
+      KEYCLOAK_REALM: "issue-tracker"
+
+      # Credentials for the mcp-server Keycloak client (for introspection).
+      # Must match mcp_server_client_secret in tofu/variables.tf and the
+      # -var flag passed to keycloak-setup above.
+      OAUTH_CLIENT_ID: "mcp-server"
+      OAUTH_CLIENT_SECRET: "mcp-server-secret"
+
+      # Issue Tracker API (internal Docker network address).
+      ISSUE_TRACKER_URL: "http://api:3001/api"
